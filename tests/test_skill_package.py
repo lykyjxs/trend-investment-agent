@@ -20,6 +20,17 @@ REQUIRED = {
     "scripts/calculate_trade_metrics.py",
 }
 ALLOWED_FRONTMATTER = {"name", "description", "license", "allowed-tools", "metadata"}
+REQUIRED_ROUTES = {
+    "references/strategy-rules.md",
+    "references/scoring-rubric.md",
+    "references/tradingview-workflow.md",
+    "references/casebook.md",
+    "references/course-notes.md",
+    "assets/daily-report-template.md",
+    "assets/no-new-data-template.md",
+    "assets/data-failure-template.md",
+    "scripts/calculate_trade_metrics.py",
+}
 
 
 class SkillPackageTests(unittest.TestCase):
@@ -53,6 +64,24 @@ class SkillPackageTests(unittest.TestCase):
         )
         self.assertRegex(metadata, r"allow_implicit_invocation:\s*true")
         self.assertNotRegex(metadata, r"(?m)^dependencies:")
+
+    def test_skill_routes_to_each_supporting_resource(self) -> None:
+        content = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        links = set(re.findall(r"\[[^\]]+\]\(([^)]+)\)", content))
+        self.assertTrue(
+            REQUIRED_ROUTES <= links,
+            f"SKILL.md is missing resource routes: {sorted(REQUIRED_ROUTES - links)}",
+        )
+        broken = sorted(link for link in links if not (SKILL_ROOT / link).is_file())
+        self.assertEqual([], broken, f"SKILL.md contains broken routes: {broken}")
+
+    def test_skill_uses_progressive_disclosure(self) -> None:
+        content = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        course = (SKILL_ROOT / "references" / "course-notes.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertLess(len(content), 12_000, "SKILL.md should stay operational and compact")
+        self.assertLess(len(content), len(course) // 4)
 
 
 if __name__ == "__main__":
