@@ -1,0 +1,7 @@
+interface:
+  display_name: "TradingView 趋势投资"
+  short_description: "使用扫地僧趋势投资体系生成 A股、港股和美股每日买点报告"
+  default_prompt: "Use $tradingview-trend-investing to generate today's TradingView-only trend investing report."
+
+policy:
+  allow_implicit_invocation: true
