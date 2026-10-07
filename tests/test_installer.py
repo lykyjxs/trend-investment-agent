@@ -26,6 +26,9 @@ class InstallerTests(unittest.TestCase):
         (self.source / "references" / "rules.md").write_text(
             "rules-v1\n", encoding="utf-8"
         )
+        (self.source / "install-manifest.txt").write_text(
+            "install-manifest.txt\nSKILL.md\nreferences/rules.md\n", encoding="utf-8"
+        )
 
     def run_installer(self, source: Path, destination: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -53,7 +56,7 @@ class InstallerTests(unittest.TestCase):
             "rules-v1\n",
             (self.destination / "references" / "rules.md").read_text(),
         )
-        self.assertIn("2 files", completed.stdout)
+        self.assertIn("3 files", completed.stdout)
         self.assertIn("SHA-256", completed.stdout)
 
     def test_overwrites_matching_files_without_deleting_unrelated_target_files(self) -> None:
@@ -65,6 +68,30 @@ class InstallerTests(unittest.TestCase):
 
         self.assertEqual(0, completed.returncode, completed.stderr)
         self.assertEqual("skill-v1\n", (self.destination / "SKILL.md").read_text())
+        self.assertEqual("keep\n", (self.destination / "local-note.txt").read_text())
+
+    def test_rejects_unlisted_source_files_before_copying(self) -> None:
+        (self.source / "private-notes.txt").write_text("do not deploy\n", encoding="utf-8")
+
+        completed = self.run_installer(self.source, self.destination)
+
+        self.assertNotEqual(0, completed.returncode)
+        self.assertIn("not listed in install-manifest.txt", completed.stderr)
+        self.assertFalse(self.destination.exists())
+
+    def test_skips_generated_bytecode_and_removes_stale_installed_bytecode(self) -> None:
+        source_cache = self.source / "scripts" / "__pycache__"
+        source_cache.mkdir(parents=True)
+        (source_cache / "metrics.pyc").write_bytes(b"generated")
+        target_cache = self.destination / "scripts" / "__pycache__"
+        target_cache.mkdir(parents=True)
+        (target_cache / "old.pyc").write_bytes(b"stale")
+        (self.destination / "local-note.txt").write_text("keep\n", encoding="utf-8")
+
+        completed = self.run_installer(self.source, self.destination)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertFalse(target_cache.exists())
         self.assertEqual("keep\n", (self.destination / "local-note.txt").read_text())
 
     def test_rejects_a_destination_without_the_exact_skill_leaf_name(self) -> None:

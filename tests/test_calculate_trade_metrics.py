@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import subprocess
 import sys
 import unittest
@@ -73,6 +74,14 @@ class CalculateMetricsTests(unittest.TestCase):
             with self.subTest(values=values):
                 with self.assertRaises(ValueError):
                     self.module.calculate_metrics(*values)
+
+    def test_rejects_non_finite_numbers(self) -> None:
+        for value in (math.nan, math.inf, -math.inf):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    self.module.calculate_metrics(value, 105, 95, 120)
+                with self.assertRaises(ValueError):
+                    self.module.classify_band(value)
 
     def test_rejects_support_without_positive_risk_distance(self) -> None:
         for support in (100, 101):

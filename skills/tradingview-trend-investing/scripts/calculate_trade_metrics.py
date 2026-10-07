@@ -8,12 +8,18 @@ charts, classify patterns, or place orders.
 from __future__ import annotations
 
 import json
+import math
 import sys
 from typing import Any
 
 
 def _positive_number(name: str, value: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        or value <= 0
+    ):
         raise ValueError(f"{name} must be a positive number")
     return float(value)
 
@@ -24,6 +30,17 @@ def classify_band(
     watch_max: float = 12.0,
 ) -> str:
     """Classify a non-negative percentage using inclusive upper bounds."""
+    for name, number in (
+        ("value", value),
+        ("normal_max", normal_max),
+        ("watch_max", watch_max),
+    ):
+        if (
+            isinstance(number, bool)
+            or not isinstance(number, (int, float))
+            or not math.isfinite(number)
+        ):
+            raise ValueError(f"{name} must be a finite number")
     if value < 0:
         raise ValueError("value must be non-negative")
     if normal_max < 0 or watch_max < normal_max:

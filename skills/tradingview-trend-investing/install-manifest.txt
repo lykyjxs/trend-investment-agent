@@ -1,0 +1,36 @@
+install-manifest.txt
+SKILL.md
+agents/openai.yaml
+assets/daily-report-template.md
+assets/data-failure-template.md
+assets/no-new-data-template.md
+references/casebook.md
+references/course-notes.md
+references/images/Pasted image 20250502095312.png
+references/images/Pasted image 20250502100531.png
+references/images/Pasted image 20250502102252.png
+references/images/Pasted image 20250502104354.png
+references/images/Pasted image 20250502110035.png
+references/images/Pasted image 20250509202043.png
+references/images/Pasted image 20250509213405.png
+references/images/Pasted image 20250509215610.png
+references/images/Pasted image 20250510095552.png
+references/images/Pasted image 20250510184327.png
+references/images/Pasted image 20250510184348.png
+references/images/Pasted image 20250510184738.png
+references/images/Pasted image 20250513213300.png
+references/images/Pasted image 20250513213658.png
+references/images/Pasted image 20250513214157.png
+references/images/Pasted image 20250513220140.png
+references/images/Pasted image 20250513223236.png
+references/images/Pasted image 20251002164239.png
+references/images/Pasted image 20251004223449.png
+references/images/Pasted image 20251004223820.png
+references/images/Pasted image 20251004223901.png
+references/images/Pasted image 20251004224138.png
+references/images/Pasted image 20251004224754.png
+references/images/Pasted image 20251006165059.png
+references/scoring-rubric.md
+references/strategy-rules.md
+references/tradingview-workflow.md
+scripts/calculate_trade_metrics.py

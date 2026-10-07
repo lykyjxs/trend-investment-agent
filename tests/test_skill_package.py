@@ -9,6 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = REPO_ROOT / "skills" / "tradingview-trend-investing"
 REQUIRED = {
     "SKILL.md",
+    "install-manifest.txt",
     "agents/openai.yaml",
     "assets/daily-report-template.md",
     "assets/no-new-data-template.md",
@@ -107,6 +108,7 @@ class SkillPackageTests(unittest.TestCase):
         required_labels = {
             "股票名称",
             "行业",
+            "对应环境基准及阶段",
             "当前价",
             "枢纽价",
             "距枢纽点",
@@ -129,6 +131,54 @@ class SkillPackageTests(unittest.TestCase):
         self.assertNotRegex(template, r"(?m)^[-*]\s*(?:股票)?代码\s*[：:]")
         self.assertIn("最终收缩 8%–12% 降级", template)
         self.assertIn("潜在亏损 8%–12% 降级", template)
+
+    def test_hard_exclusions_are_consistent_across_references(self) -> None:
+        rubric = (SKILL_ROOT / "references" / "scoring-rubric.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("明显 Stage 4", rubric)
+        self.assertIn("排除观察名单和新触发", rubric)
+        self.assertNotIn("必要时排除观察", rubric)
+
+    def test_failure_template_separates_field_and_market_failures(self) -> None:
+        template = (SKILL_ROOT / "assets" / "data-failure-template.md").read_text(
+            encoding="utf-8"
+        )
+        for heading in (
+            "### 可选状态字段失败",
+            "### 必需判断字段失败",
+            "### 整个市场失败",
+        ):
+            self.assertIn(heading, template)
+        self.assertIn("保留其余可可靠生成的候选与评分", template)
+        self.assertIn("相对成交量", template)
+        self.assertIn("不生成依赖该字段的候选与评分", template)
+
+    def test_operational_contracts_are_executable_assertions(self) -> None:
+        strategy = (SKILL_ROOT / "references" / "strategy-rules.md").read_text(
+            encoding="utf-8"
+        )
+        workflow = (SKILL_ROOT / "references" / "tradingview-workflow.md").read_text(
+            encoding="utf-8"
+        )
+        template = (SKILL_ROOT / "assets" / "daily-report-template.md").read_text(
+            encoding="utf-8"
+        )
+        for text in (
+            "位于枢纽点下方",
+            "位于枢纽点上方",
+            "最近 5 个交易日",
+            "只列上一完整交易日",
+            "恒生科技",
+            "恒生指数",
+            "纳斯达克 100",
+            "标普 500",
+            "无明确压力位",
+            "2R 目标",
+        ):
+            self.assertIn(text, strategy + workflow + template)
+        self.assertIn("只列以前未在本任务报告过的首次突破", template)
+        self.assertNotRegex(template, r"(?m)^[-*]\s*(?:股票)?代码\s*[：:]")
 
     def test_casebook_links_only_to_bundled_images(self) -> None:
         casebook_file = SKILL_ROOT / "references" / "casebook.md"
