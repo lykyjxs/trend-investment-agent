@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import unittest
 from pathlib import Path
+from urllib.parse import unquote
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = REPO_ROOT / "skills" / "tradingview-trend-investing"
@@ -82,6 +83,75 @@ class SkillPackageTests(unittest.TestCase):
         )
         self.assertLess(len(content), 12_000, "SKILL.md should stay operational and compact")
         self.assertLess(len(content), len(course) // 4)
+
+    def test_daily_template_has_report_sections_in_operational_order(self) -> None:
+        template_file = SKILL_ROOT / "assets" / "daily-report-template.md"
+        self.assertTrue(template_file.is_file(), "daily report template must exist")
+        template = template_file.read_text(encoding="utf-8")
+        headings = [
+            "## 市场摘要",
+            "## 接近买点观察名单（主体）",
+            "## 上一交易日新触发买点（次要）",
+            "## 异常与缺失",
+        ]
+        positions = [template.find(heading) for heading in headings]
+        self.assertTrue(all(position >= 0 for position in positions), positions)
+        self.assertEqual(sorted(positions), positions)
+        self.assertIn("每市场最多 10 只", template)
+        self.assertIn("符合者全部列出，不设数量上限", template)
+
+    def test_daily_template_stock_entry_exposes_required_decision_fields(self) -> None:
+        template_file = SKILL_ROOT / "assets" / "daily-report-template.md"
+        self.assertTrue(template_file.is_file(), "daily report template must exist")
+        template = template_file.read_text(encoding="utf-8")
+        required_labels = {
+            "股票名称",
+            "行业",
+            "当前价",
+            "枢纽价",
+            "距枢纽点",
+            "条件单参考触发价",
+            "支撑位",
+            "止损参考价",
+            "潜在亏损",
+            "压力位或 2R 目标",
+            "预期盈利",
+            "盈亏比",
+            "最终收缩",
+            "评分",
+            "优势",
+            "缺失条件",
+            "主要风险",
+            "降级说明",
+        }
+        missing = sorted(label for label in required_labels if label not in template)
+        self.assertEqual([], missing, f"missing report fields: {missing}")
+        self.assertNotRegex(template, r"(?m)^[-*]\s*(?:股票)?代码\s*[：:]")
+        self.assertIn("最终收缩 8%–12% 降级", template)
+        self.assertIn("潜在亏损 8%–12% 降级", template)
+
+    def test_casebook_links_only_to_bundled_images(self) -> None:
+        casebook_file = SKILL_ROOT / "references" / "casebook.md"
+        self.assertTrue(casebook_file.is_file(), "casebook must exist")
+        casebook = casebook_file.read_text(encoding="utf-8")
+        for case_name in (
+            "NVIDIA",
+            "腾讯",
+            "捷蓝航空",
+            "eBay",
+            "DICK'S Sporting Goods",
+            "小米",
+            "移动止损与加仓",
+        ):
+            self.assertIn(case_name, casebook)
+        image_links = re.findall(r"!\[[^\]]*\]\((images/[^)]+)\)", casebook)
+        self.assertTrue(image_links, "casebook must include bundled image links")
+        broken = [
+            link
+            for link in image_links
+            if not (SKILL_ROOT / "references" / unquote(link)).is_file()
+        ]
+        self.assertEqual([], broken, f"casebook has broken image links: {broken}")
 
 
 if __name__ == "__main__":
