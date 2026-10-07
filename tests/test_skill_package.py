@@ -153,6 +153,24 @@ class SkillPackageTests(unittest.TestCase):
         ]
         self.assertEqual([], broken, f"casebook has broken image links: {broken}")
 
+    def test_daily_automation_prompt_preserves_report_contract(self) -> None:
+        prompt_file = REPO_ROOT / "automation" / "daily-trend-report-prompt.md"
+        self.assertTrue(prompt_file.is_file(), "daily automation prompt must exist")
+        prompt = prompt_file.read_text(encoding="utf-8")
+        for required_text in (
+            "$tradingview-trend-investing",
+            "只能使用 TradingView",
+            "最近一个完整交易日",
+            "每个市场最多 10 只",
+            "全部列出",
+            "同一任务",
+            "不要显示股票代码",
+            "不得下单",
+            "无新数据",
+            "部分失败",
+        ):
+            self.assertIn(required_text, prompt)
+
 
 if __name__ == "__main__":
     unittest.main()
