@@ -198,14 +198,88 @@
 
 ## Skill 设计
 
-Skill 应包含：
+Skill 采用标准的渐进式披露结构：`SKILL.md` 只保留触发条件、路由、核心边界和主流程；课程全文、蒸馏规则、案例、TradingView 操作细节和可编辑模板分别存放，Agent 只在当前步骤需要时读取。
 
-- 简洁的 `SKILL.md`，说明适用场景、TradingView 唯一数据源边界、完整工作流和输出契约。
-- 一份课程规则参考，保存阶段、VCP、风险、支撑压力和危险信号的蒸馏结果。
-- 一份评分与报告格式参考，保存本设计中的确定性规则。
-- 必要时提供轻量辅助脚本，只用于确定性算术、百分比和 2R 计算；脚本不得获取其他行情源。
+```text
+tradingview-trend-investing/
+|-- SKILL.md
+|-- agents/
+|   `-- openai.yaml
+|-- references/
+|   |-- course-notes.md
+|   |-- strategy-rules.md
+|   |-- scoring-rubric.md
+|   |-- tradingview-workflow.md
+|   |-- casebook.md
+|   `-- images/
+|       `-- selected-case-images
+|-- assets/
+|   |-- daily-report-template.md
+|   |-- no-new-data-template.md
+|   `-- data-failure-template.md
+`-- scripts/
+    `-- calculate-trade-metrics.py
+```
 
-Skill 保持正常自动发现。自动任务的提示词显式要求使用该 skill。
+### `SKILL.md`
+
+- 使用可发现且不过度宽泛的名称和描述。
+- 说明该 skill 只在使用“扫地僧”趋势投资体系，通过 TradingView 筛选或复核 A 股、港股、美股时触发。
+- 声明 TradingView 是唯一行情和图表来源。
+- 路由 Agent 按需读取规则、评分、案例、UI 工作流和报告模板，而不是每次加载全部资料。
+- 明确禁止自动下单；条件单价格仅作为用户人工确认的参考信息。
+
+### 课程原始笔记
+
+`references/course-notes.md` 保存仓库课程笔记的完整文本版本，作为理论争议或细节缺失时的最终参考。保留章节结构和原案例名称，并把 Obsidian 图片链接改为 skill 内可解析的相对链接。Agent 日常运行不默认加载全文，只在蒸馏规则无法回答、需要核对原意或用户明确要求查看课程依据时读取相关章节。
+
+### 蒸馏规则
+
+`references/strategy-rules.md` 保存日常运行需要的精炼规则：
+
+- 四阶段及第二阶段趋势模板。
+- VCP、稳固期、最终收缩和枢纽点。
+- 大盘与个股的对应关系。
+- 支撑位、压力位、止损、2R 和危险信号。
+- 领头羊、顶级竞争者和相对强度判断。
+- 本设计中经用户调整的 8%与 12%阈值，明确标注为本 skill 的实战口径，避免与课程原始 5%示例混淆。
+
+`references/scoring-rubric.md` 保存 100 分评分表、观察名单门槛、降级规则、买点有效区间及逐字段计算方法。评分规则只在这里维护，`SKILL.md` 和模板不重复定义一套可能漂移的分数。
+
+### TradingView 工作流
+
+`references/tradingview-workflow.md` 保存三个市场的筛选条件、指数映射、周线与日线检查顺序、相对成交量字段、页面异常恢复步骤和停止条件。页面改版时只需更新此文件，不需要改写课程规则。
+
+### 案例库
+
+`references/casebook.md` 从原笔记提炼可检索案例，每个案例包含“适用问题、图表观察、正确结论、常见误判、原笔记章节和相关图片”。首版至少包括：
+
+- NVIDIA：支撑位、压力位和高风险追价。
+- 腾讯：杯柄/枢纽突破及风险收益比。
+- JetBlue：四阶段识别。
+- eBay：假突破和放量下跌危险信号。
+- Dicks Sporting：VCP 多次收缩和突破。
+- 小米：从观察、收缩到完整交易系统的综合案例。
+- NVIDIA 或 Apple：移动止损、自然调整和加仓的补充案例。
+
+`references/images/` 只复制案例库实际引用、能改变判断的代表性图例，不机械复制所有截图。案例库必须能从案例名称快速定位到原始课程章节；Agent 需要更多上下文时再读取 `course-notes.md`。
+
+### 可编辑模板
+
+`assets/daily-report-template.md` 保存正常日报的稳定字段顺序、市场分组和单股条目格式。用户以后要改变栏目、排序、措辞或警告样式时，优先修改模板，而不是改动策略规则。
+
+另外提供：
+
+- `assets/no-new-data-template.md`：三地没有新收盘数据时的简短消息。
+- `assets/data-failure-template.md`：TradingView 登录失效、页面不可读或部分市场失败时的报告格式。
+
+模板只定义输出形状，不重复维护评分算法。
+
+### 确定性计算脚本
+
+`scripts/calculate-trade-metrics.py` 只执行可复核算术：距枢纽点百分比、潜在亏损、预期盈利、盈亏比和 2R 目标价。脚本不访问网络、不获取行情、不判断图形；所有输入必须来自本次 TradingView UI 读取结果。
+
+Skill 保持正常自动发现。自动任务的提示词显式要求使用该 skill，并要求按需读取 `daily-report-template.md`、`strategy-rules.md`、`scoring-rubric.md` 和 `tradingview-workflow.md`。
 
 ## 测试与验收
 
@@ -214,6 +288,10 @@ Skill 保持正常自动发现。自动任务的提示词显式要求使用该 s
 - 运行 skill 结构和 frontmatter 校验。
 - 用独立场景验证触发条件、评分、观察名单降级、压力位缺失和错误处理。
 - 验证 skill 不会调用 TradingView 之外的行情源。
+- 验证 `SKILL.md` 中的每个引用文件都存在且路由条件清楚。
+- 从案例库随机选择案例，确认 Agent 能定位课程原文和所需图例，而无需默认加载全部笔记。
+- 修改日报模板中的一个字段顺序，确认策略规则和评分结果不受影响。
+- 运行确定性计算脚本的边界测试，包括 5%、8%、12%、2R 和零除保护。
 
 ### TradingView 试运行
 
