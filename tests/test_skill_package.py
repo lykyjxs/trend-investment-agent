@@ -36,6 +36,29 @@ REQUIRED_ROUTES = {
 
 
 class SkillPackageTests(unittest.TestCase):
+    def test_canonical_market_cap_floor_is_50_billion_local_currency(self) -> None:
+        strategy = (SKILL_ROOT / "references" / "strategy-rules.md").read_text(
+            encoding="utf-8"
+        )
+        workflow = (SKILL_ROOT / "references" / "tradingview-workflow.md").read_text(
+            encoding="utf-8"
+        )
+        prompt = (REPO_ROOT / "automation" / "daily-trend-report-prompt.md").read_text(
+            encoding="utf-8"
+        )
+        normative_text = strategy + workflow + prompt
+        self.assertIn("500 亿", normative_text)
+        self.assertNotIn("400 亿", normative_text)
+
+    def test_repository_readme_is_english_and_documents_the_market_cap_floor(self) -> None:
+        readme_file = REPO_ROOT / "README.md"
+        self.assertTrue(readme_file.is_file(), "README.md must exist")
+        readme = readme_file.read_text(encoding="utf-8")
+        self.assertIn("TradingView Trend Investing Agent", readme)
+        self.assertIn("50 billion", readme)
+        self.assertIn("local currency", readme)
+        self.assertIn("TradingView", readme)
+
     def test_required_package_files_exist(self) -> None:
         missing = sorted(path for path in REQUIRED if not (SKILL_ROOT / path).is_file())
         self.assertEqual([], missing, f"missing skill files: {missing}")
